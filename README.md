@@ -1,5 +1,5 @@
 <!--
-  🌟 n8n • Telegram AI Sales Assistant • 🚀
+  🌟 n8n • Telegram AI Agent • 🚀
   A friendly, voice-aware AI bot that handles customer queries, recommends products,
   and logs every interaction—powered by n8n (latest), Telegram & OpenAI.
 -->
