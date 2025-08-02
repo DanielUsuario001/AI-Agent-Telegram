@@ -1,0 +1,472 @@
+{
+  "name": "IA AGENT",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -704,
+        -16
+      ],
+      "id": "25d8c092-b5ea-4e59-b980-f869095871c7",
+      "name": "Telegram Trigger",
+      "webhookId": "b9930002-6d83-4d57-bb4e-f0b4212f90ad",
+      "credentials": {
+        "telegramApi": {
+          "id": "aTjmle7JAohNhP4w",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text || $json.message.text }}",
+        "options": {
+          "systemMessage": "You are a helpful and friendly AI sales assistant for a computer store called \"System Cusco\".\n\nYour goal is to help customers choose the best computer based on their needs. Always respond in a clear, professional, and polite tone.\n\nAsk follow-up questions to understand the client’s requirements. For example: whether they want it for gaming, design, office work, studies, or general use.\n\nThen recommend the most appropriate specifications or models. Always try to adjust to their budget when possible.\n\nIf the client says things like “I want a fast computer” or “for Photoshop”, interpret what kind of hardware that might require.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        640,
+        -112
+      ],
+      "id": "39438114-17d4-4bab-bf6c-dcd0a0ed1d6e",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        304
+      ],
+      "id": "dd4992f7-b5b5-4cca-9ba2-1f91c01b5156",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Z3b12hKki8Ikhr3p",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        912,
+        384
+      ],
+      "id": "5f84cacc-4c6e-4720-9a73-f112c0929e0c",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1296,
+        16
+      ],
+      "id": "e0dcfdbf-5742-46a1-b995-d96bea6c10e2",
+      "name": "Send a text message",
+      "webhookId": "75f96859-94a6-4d20-ac1b-0d8bc23a07fa",
+      "credentials": {
+        "telegramApi": {
+          "id": "aTjmle7JAohNhP4w",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "fcc96633-cfcb-4e26-90aa-e8737ca88c5d"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5ac51479-647d-49fb-ba43-27d08d75c91f",
+                    "leftValue": "={{ $json.message.voice.file_id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "voice"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -384,
+        -32
+      ],
+      "id": "2450fa99-85f8-4484-9220-2357df8ff3d8",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -224,
+        336
+      ],
+      "id": "7cdb82f1-dad9-4bd9-a864-2c4d1e2c9368",
+      "name": "Get a file",
+      "webhookId": "251a8829-b750-4b41-98e1-cb49c8792e64",
+      "credentials": {
+        "telegramApi": {
+          "id": "aTjmle7JAohNhP4w",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.telegram.org/file/bot8400049453:AAFGPGLhcznQ6wwfT1YXCNDoBYgxpwCxluQ/{{ $json.result.file_path }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        32,
+        304
+      ],
+      "id": "3473944f-5740-43e9-80bc-bc71e85d44f6",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        288,
+        80
+      ],
+      "id": "99b8bf6a-9599-4cd7-ab6b-d344d99ee96c",
+      "name": "Transcribe a recording",
+      "credentials": {
+        "openAiApi": {
+          "id": "Z3b12hKki8Ikhr3p",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Eres el asistente de reservas. Para que guardes los datos en Google Sheets con las columnas en el orden correcto, sigue estas indicaciones exactas al procesar cada reserva:\n\nAl crear o actualizar la hoja, establece en tu parámetro Description la siguiente línea sin añadir, quitar ni modificar nada:\n\nnginx\nCopiar\nEditar\nid_reserva\tchat_id\tnombre\tadultos\tninos\tconsideraciones\testado\tfecha\nInterpreta cada campo de la reserva y asígnalo a la columna correspondiente según ese orden.\n\nAsegúrate de que:\n\nid_reserva sea un identificador único.\n\nchat_id sea el ID de Telegram del usuario.\n\nnombre, adultos, ninos, consideraciones, estado y fecha correspondan exactamente a esos valores.\n\nNo reordenes ni omitas columnas al escribir en la hoja.\n\nTras guardar, valida que la primera fila de la hoja muestre exactamente:\n\nnginx\nCopiar\nEditar\nid_reserva\tchat_id\tnombre\tadultos\tninos\tconsideraciones\testado\tfecha",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1oECLz2ZEceauL5JXVq4LOQwqJMWZn29NldjgaH3NLdw",
+          "mode": "list",
+          "cachedResultName": "Almacenamiento 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1oECLz2ZEceauL5JXVq4LOQwqJMWZn29NldjgaH3NLdw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1oECLz2ZEceauL5JXVq4LOQwqJMWZn29NldjgaH3NLdw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id_reserva"
+          ],
+          "schema": [
+            {
+              "id": "id_reserva",
+              "displayName": "id_reserva",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "nombre",
+              "displayName": "nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "adultos",
+              "displayName": "adultos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ninos",
+              "displayName": "ninos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "consideraciones",
+              "displayName": "consideraciones",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha",
+              "displayName": "fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        1136,
+        288
+      ],
+      "id": "9fe4bc14-408f-4945-9424-80260ab332e3",
+      "name": "Append or update row in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "x6XMWQmi7Kf2azMQ",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Transcribe a recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe a recording": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "436bf386-aea5-4604-8dd5-7a7642550413",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "00422e41e33426a91dacf2caf599733e3ccee2a97a6851cfcc669d224947553d"
+  },
+  "id": "Zc0hyecLmVRqv997",
+  "tags": []
+}
